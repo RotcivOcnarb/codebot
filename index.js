@@ -446,7 +446,7 @@ function generateImage(code, callback){
 			callback();
 		})
 		.catch(error => {
-			console.logError(error);
+			console.log(error);
 		})
 	
 }
