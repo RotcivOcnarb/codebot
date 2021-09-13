@@ -3,6 +3,7 @@ const { createCanvas } = require("canvas");
 const fs = require("fs");
 const https = require("https");
 var FormData = require('form-data');
+const nodeHtmlToImage = require('node-html-to-image')
 
 /*
 
@@ -126,8 +127,8 @@ function declareVariable(){
 
 	variablesStack[stackIndex][variableName] = newlyCreatedVariable;
 
-	var output = rand_array(declares) + " " + variableName + " = " + generateLiteral([type]);
-	return output
+	var output = rand_array(declares) + " " + '<span style="color: #50FA7B">' + variableName + "</span>" + " = " + generateLiteral([type]);
+	return output + ";";
 }
 
 //[OK]
@@ -135,14 +136,14 @@ function generateLiteral(types){
 
 	var typeMethods = {
 		number: [
-			() => Math.random() * 10,
-			() => Math.floor(Math.random() * 100)
+			() => '<span style="color: #FF5555">' + (Math.random() * 10) + '</span>',
+			() => '<span style="color: #FF5555">' + Math.floor(Math.random() * 100) + '</span>'
 		],
-		string: [() => '"' + randomWords({ min: 1, max: 5, join: ' ' }) + '"'],
+		string: [() => '<span style="color: #FF5555">"' + randomWords({ min: 1, max: 5, join: ' ' }) + '"</span>'],
 		array: [() => "[]"],
 		boolean: [
-			() => "true",
-			() => "false",
+			() => 'true',
+			() => 'false',
 		]
 	}
 
@@ -170,7 +171,7 @@ function generateValue(types){
 	if(declaredVariables.length > 0){
 		if(Math.random() < 0.5) return generateLiteral(types);
 		else {
-			return rand_array(declaredVariables);
+			return '<span style="color: #50FA7B">' + rand_array(declaredVariables) + "</span>";
 		}
 	}
 	else return generateLiteral(types);
@@ -224,6 +225,8 @@ function openFor(){
 		"<=",
 	]
 
+	forvariable = '<span style="color: #50FA7B">' + forvariable + "</span>";
+
 	var fr = "for (var " + 
 		forvariable + " = " + Math.floor(Math.random() * 100) + "; " + 
 		forvariable + " " + rand_array(comparators) + " " + generateValue(["number"]) + "; " + 
@@ -248,7 +251,7 @@ function attribute(){
 	if(type == "number" && Math.random() > 0.7) attr = generateArithmeticExpression();
 	if(type == "boolean" && Math.random() > 0.7) attr = generateBooleanExpression();
 
-	return getRandomVariable([type]) + " = " + attr;
+	return '<span style="color: #50FA7B">' + getRandomVariable([type]) + "</span> = " + attr + ";";;
 }
 
 //[OK]
@@ -256,7 +259,7 @@ function pushToArray(){
 	var v = getRandomVariable(["array"]);
 	if(!v) return false;
 
-	return v + ".push(" + generateValue() + ")";
+	return '<span style="color: #50FA7B">' + v + '</span>.<span style="color: #50FA7B">push</span>(' + generateValue() + ");";
 }
 
 //[OK]
@@ -264,7 +267,7 @@ function attributeToRandomArray(){
 	var v = getRandomVariable(["array"]);
 	if(!v) return false;
 
-	return v + "[" + generateValue(["number"]) + "] = " + generateValue();
+	return '<span style="color: #50FA7B">' + v + "</span>[" + generateValue(["number"]) + "] = " + generateValue() + ";";
 }
 
 //[OK]
@@ -303,6 +306,7 @@ function generateBooleanExpression(){
 			var type = rand_array(types);
 			
 			var v1 = getRandomVariable([type]);
+			v1 = '<span style="color: #50FA7B">' + v1 + "</span>";
 			if(objectEntries(getCurrentVariablesList([type])).length == 0){ //Se não tem nenhuma variavel do q eu preciso, usa literal mesmo
 				v1 = generateValue([type]);
 			}
@@ -311,10 +315,11 @@ function generateBooleanExpression(){
 			while(v1 == v2) v2 = generateValue([type]);
 			
 
-			return v1+ " " + c + " " + v2;
+			return  v1 + " " + c + " " + v2;
 		},
 		(c) => { //Compara 2 valores numericos
 			var v1 = getRandomVariable(["number"]);
+			v1 = '<span style="color: #50FA7B">' + v1 + "</span>";
 			if(objectEntries(getCurrentVariablesList(["number"])).length == 0){ //Se não tem nenhuma variavel do q eu preciso, usa literal mesmo
 				v1 = generateValue(["number"]);
 			}
@@ -322,10 +327,11 @@ function generateBooleanExpression(){
 			var v2 = generateValue(["number"]);
 			while(v1 == v2) v2 = generateValue(["number"]);
 
-			return v1 + " " + c + " " + v2; 
+			return  v1 + " " + c + " " + v2;
 		},
 		(c) => { //Compara 2 boolean
 			var v1 = getRandomVariable(["boolean"]);
+			v1 = '<span style="color: #50FA7B">' + v1 + "</span>";
 			if(objectEntries(getCurrentVariablesList(["boolean"])).length == 0){ //Se não tem nenhuma variavel do q eu preciso, usa literal mesmo
 				v1 = generateValue(["boolean"]);
 			}
@@ -333,10 +339,11 @@ function generateBooleanExpression(){
 			var v2 = generateValue(["boolean"]);
 			while(v1 == v2) v2 = generateValue(["boolean"]);
 
-			return v1 + " " + c + " " + v2;  
+			return  v1 + " " + c + " " + v2;
 		},
 		(c) => { //nega uma boolean
 			var v1 = getRandomVariable(["boolean"]);
+			v1 = '<span style="color: #50FA7B">' + v1 + "</span>";
 			if(objectEntries(getCurrentVariablesList(["boolean"])).length == 0){ //Se não tem nenhuma variavel do q eu preciso, usa literal mesmo
 				v1 = generateValue(["boolean"]);
 			}
@@ -393,42 +400,55 @@ function logValue(){
 		() => generateBooleanExpression()
 	]
 
-	return "console.log(" + rand_array(possibles)() + ")";
+	return '<span style="color: #50FA7B">console</span>.<span style="color: #50FA7B">log</span>(' + rand_array(possibles)() + ");";
 }
 
 function rand_array(arr){
 	return arr[Math.floor(Math.random() * arr.length)];
 }
 
-function generateImage(code){
-	//Create aux canvas and get metrics
-	const oc = createCanvas(100, 100);
-	const ct = oc.getContext("2d");
-	ct.font = "30px Lucida Console";
-	ct.textAlign = "left";
-	var txtWidth = ct.measureText(code).width;
-	var txtHeight = 30 * code.split("\n").length;
-
-	console.log("Text width: " + txtWidth + "\nText height: " + txtHeight);
-
-	//Create real canvas using metrics
-	const canvas = createCanvas(txtWidth + 20, txtHeight + 20);
-	const context = canvas.getContext("2d");
-
-	//Background
-	context.fillStyle = "black";
-	context.fillRect(0, 0, canvas.width, canvas.height);
-
-	//Text
-	context.fillStyle = "#00ff00";
-	context.font = "30px Lucida Console";
-	context.textAlign = "left";
-	context.fillText(code, 10, 40);
-
-	const buffer = canvas.toBuffer("image/png");
-	fs.writeFileSync("./output.png", buffer);
-
-	return buffer;
+function generateImage(code, callback){
+	var tokens = [
+		"var",
+		"let",
+		"const",
+		"for",
+		"while",
+		"if",
+		"else",
+		"false",
+		"true"
+	]
+	
+	
+	for(var i = 0; i < tokens.length; i ++){
+		code = code.split(tokens[i]).join(
+			'<span style="color: #FF79C6">' +
+				tokens[i] + 
+			'</span>'
+		)
+	}
+	
+	var htmlBase = 
+	"<html>" + 
+		'<body style="font-family: Lucida Console; background-color: #282A36; color: #F8F8F2"><div id="content" style="padding: 10px">' + 
+			code.split("  ").join("&ensp; ").split("\n").join("<br>") + 
+		'</div></body>' + 
+	'</html>'
+	
+	nodeHtmlToImage({
+		output: './output.png',
+		html: htmlBase,
+		selector: "div#content"
+	  })
+		.then(() => {
+			console.log("Image generated");
+			callback();
+		})
+		.catch(error => {
+			console.logError(error);
+		})
+	
 }
 
 function sendToPage(code){
@@ -472,8 +492,10 @@ function objectEntries(obj){
 var token = process.env["CODEBOT_ACCESS_TOKEN"];
 
 var code = generateCode();
-generateImage(code);
-sendToPage(code);
+generateImage(code, () =>{
+	sendToPage(code);
+});
+
 
 setInterval(() => {
 	var code = generateCode();
