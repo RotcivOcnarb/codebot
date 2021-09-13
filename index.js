@@ -49,7 +49,7 @@ var variableNames = [
 	"idx"
 ]
 
-var maxLines = 10;
+var maxLines = 5;
 var stackIndex = 0;
 var variablesStack = [];
 
@@ -70,15 +70,60 @@ function baseCode(){
 	var lines = [
 		(code) => {
 			var temp = openIf() + "\n"
+
 			var inside = baseCode();
 			inside = inside.split("\n").filter((l) => l.length > 0).map((l) => "  " + l).join("\n");
 			temp += inside + "\n"; 
+
 			temp += closeStack() + "\n";
+
+			while(Math.random() < 0.1){
+				temp += openElseIf() + "\n"
+
+				inside = baseCode();
+				inside = inside.split("\n").filter((l) => l.length > 0).map((l) => "  " + l).join("\n");
+				temp += inside + "\n"; 
+
+				temp += closeStack() + "\n";
+			}
+
+			if(Math.random() < 0.1){
+				temp += openElse() + "\n"
+
+				inside = baseCode();
+				inside = inside.split("\n").filter((l) => l.length > 0).map((l) => "  " + l).join("\n");
+				temp += inside + "\n"; 
+
+				temp += closeStack() + "\n";
+			}
+
+			return temp
+		},
+		(code) => {
+			var temp = openWhile() + "\n"
+
+			var inside = baseCode();
+			inside = inside.split("\n").filter((l) => l.length > 0).map((l) => "  " + l).join("\n");
+			temp += inside + "\n"; 
+
+			temp += closeStack() + "\n";
+
+			return temp
+		},
+		(code) => {
+			var temp = openFor() + "\n"
+
+			var inside = baseCode();
+			inside = inside.split("\n").filter((l) => l.length > 0).map((l) => "  " + l).join("\n");
+			temp += inside + "\n"; 
+
+			temp += closeStack() + "\n";
+
 			return temp
 		}
 	]
 
-	lines = lines.concat(codeBase);
+	lines = lines.concat(codeBase).concat(codeBase);
 
 	var code = "";
 
@@ -186,7 +231,7 @@ function openIf(){
 
 //[OK]
 function openElseIf(){
-	var openif = openIfFromElse(0);
+	var openif = openIf();
 	return "else " + openif;
 }
 
@@ -432,7 +477,7 @@ function generateImage(code, callback){
 	var htmlBase = 
 	"<html>" + 
 		'<body style="font-family: Lucida Console; background-color: #282A36; color: #F8F8F2"><div id="content" style="padding: 10px">' + 
-			code.split("  ").join("&ensp; ").split("\n").join("<br>") + 
+			code.split("  ").join("&ensp;&ensp; ").split("\n").join("<br>") + 
 		'</div></body>' + 
 	'</html>'
 	
@@ -494,12 +539,12 @@ var token = process.env["CODEBOT_ACCESS_TOKEN"];
 
 var code = generateCode();
 generateImage(code, () =>{
-	sendToPage(code);
+	//sendToPage(code);
 });
 
 
-setInterval(() => {
-	var code = generateCode();
-	generateImage(code);
-	sendToPage(code);
-}, 1000 * 60 * 60);
+// setInterval(() => {
+// 	var code = generateCode();
+// 	generateImage(code);
+// 	sendToPage(code);
+// }, 1000 * 60 * 60);
