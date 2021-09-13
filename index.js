@@ -364,7 +364,6 @@ function sendToPage(code){
 }
 
 var token = process.env["CODEBOT_ACCESS_TOKEN"];
-console.log(token)
 
 var code = generateCode();
 generateImage(code);
@@ -375,7 +374,3 @@ setInterval(() => {
 	generateImage(code);
 	sendToPage(code);
 }, 1000 * 60 * 60);
-
-
-//long lived: EAAHxvAomuM0BAEmaZAcXqdJiHXxIrLo2ZBQ5o16A3o0OHM0hbInDi7WdxjnZAZAG2PVOsJsWiZAfW4GuAk2mFhk0RN8bSOoTWZBAIGLUOZCrkrX55u8msnA83B97g5qpGcJYLWGORKbS18jI36nTJIZAbVkZBvtJzXGvI0iV1p8V4BIhSQokj8ycO
-//4397299510349216
