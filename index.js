@@ -329,41 +329,44 @@ function generateImage(code){
 	return buffer;
 }
 
-var code = generateCode();
-generateImage(code);
-console.log(code);
+function sendToPage(){
+	var messages = [
+		"Could this be the next AI?",
+		"This is definetely the most optimized code i made",
+		"I'm sending that to github",
+		"Not one of my best, i admit",
+		"How does this even work",
+		"Don't ask question, just run it",
+		code.split("\n").length + " lines of pure chaos",
+		"Does this even compile?",
+	]
+	
+	form = new FormData();
+	form.append("file", fs.createReadStream("./output.png"))
+	form.append("message", rand_array(messages));
+	
+	
+	const req = https.request(
+		{
+			hostname: 'graph.facebook.com',
+			path: '/v11.0/668461063578750/photos?access_token=' + token,
+			method: 'POST',
+			headers: form.getHeaders()
+		}, res => {
+			res.on('data', d => {
+				var obj = JSON.parse(d.toString());
+				console.log(JSON.stringify(obj, 2, 2));
+			});
+		}
+	);
+	
+	form.pipe(req);
+}
+
 var token = process.env["CODEBOT_ACCESS_TOKEN"];
 
-var messages = [
-	"Could this be the next AI?",
-	"This is definetely the most optimized code i made",
-	"I'm sending that to github",
-	"Not one of my best, i admit",
-	"How does this even work",
-	"Don't ask question, just run it",
-	code.split("\n").length + " lines of pure chaos",
-	"Does this even compile?",
-]
-
-form = new FormData();
-form.append("file", fs.createReadStream("./output.png"))
-form.append("message", rand_array(messages));
-
-
-const req = https.request(
-	{
-		hostname: 'graph.facebook.com',
-		path: '/v11.0/668461063578750/photos?access_token=' + token,
-		method: 'POST',
-		headers: form.getHeaders()
-	}, res => {
-		res.on('data', d => {
-			var obj = JSON.parse(d.toString());
-			console.log(JSON.stringify(obj, 2, 2));
-		});
-	}
-);
-
-form.pipe(req);
-
-//req.end();
+setInterval(() => {
+	var code = generateCode();
+	generateImage(code);
+	sendToPage();
+}, 1000 * 60 * 60);
