@@ -329,7 +329,7 @@ function generateImage(code){
 	return buffer;
 }
 
-function sendToPage(){
+function sendToPage(code){
 	var messages = [
 		"Could this be the next AI?",
 		"This is definetely the most optimized code i made",
@@ -365,8 +365,12 @@ function sendToPage(){
 
 var token = process.env["CODEBOT_ACCESS_TOKEN"];
 
+var code = generateCode();
+generateImage(code);
+sendToPage(code);
+
 setInterval(() => {
 	var code = generateCode();
 	generateImage(code);
-	sendToPage();
+	sendToPage(code);
 }, 1000 * 60 * 60);
