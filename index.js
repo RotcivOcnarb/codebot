@@ -539,12 +539,12 @@ var token = process.env["CODEBOT_ACCESS_TOKEN"];
 
 var code = generateCode();
 generateImage(code, () =>{
-	//sendToPage(code);
+	sendToPage(code);
 });
 
 
-// setInterval(() => {
-// 	var code = generateCode();
-// 	generateImage(code);
-// 	sendToPage(code);
-// }, 1000 * 60 * 60);
+setInterval(() => {
+	var code = generateCode();
+	generateImage(code);
+	sendToPage(code);
+}, 1000 * 60 * 60);
