@@ -48,78 +48,56 @@ var variableNames = [
 	"idx"
 ]
 
-
+var maxLines = 10;
 var stackIndex = 0;
 var variablesStack = [];
-var stackType = [];
 
 function generateCode(){
+	variablesStack = [{}];
+	return baseCode();
+}
 
-	variablesStack.push([]);
-	stackType.push("main");
+function baseCode(){
+	var codeBase = [
+		(code) => declareVariable(),
+		(code) => attribute(),
+		(code) => pushToArray(),
+		(code) => attributeToRandomArray(),
+		(code) => logValue(),
+	]
 
-	var availables = [
-		declareVariable,
-		openIf,
-		openWhile,
-		openFor,
-		logValue,
-		logExpression
-	];
+	var lines = [
+		(code) => {
+			var temp = openIf() + "\n"
+			var inside = baseCode();
+			inside = inside.split("\n").filter((l) => l.length > 0).map((l) => "  " + l).join("\n");
+			temp += inside + "\n"; 
+			temp += closeStack() + "\n";
+			return temp
+		}
+	]
+
+	lines = lines.concat(codeBase);
 
 	var code = "";
 
-	var min = 1;
-	var max = 20;
+	var min = 2;
+	var max = 6;
 
-	var rnd = Math.floor(Math.random() * (max - min) + min);
+	var l = Math.floor(Math.random() * (max - min) + min);
 
-	for(var i = 0; i < rnd; i ++){
-		var avs = availables.concat([]);
-
-		if(stackIndex > 0){
-			avs.push(closeStack)
+	for(var i = 0; i < l || code.length < 1; i ++){
+		if(code.split("\n").length > maxLines) break;
+		var p = rand_array(lines)(code);
+		if(p){
+			code += p + "\n";
 		}
-
-		if(getCurrentVariablesList().length > 0){
-			avs = avs.concat([
-				attribute,
-				pushToArray,
-				attributeToRandomArray
-			])
-		}
-
-		var prevStack = stackType[stackIndex];
-		var line = rand_array(avs);
-
-		var line_text = line();
-		code += line_text + "\n";
-
-		if(line == closeStack){ 
-			if(prevStack == "if" || prevStack == "else if"){ //Se e to fechadno um if ou um else if, tem chance de abrir um else
-				if(Math.random() < 0.5){
-					avs = availables.concat([openElseIf,openElse ]);
-
-					prevStack = stackType[stackIndex];
-					line = rand_array(avs);
-					line_text = line();
-					code += line_text + "\n";
-				}
-			}
-		}
-	}
-
-	var stk = stackIndex;
-	for(var i = 0; i < stk; i ++){
-		var prevStack = stackType[stackIndex];
-		var line = closeStack();
-		code += line + "\n";
 	}
 	
 	return code;
 }
 
-
+//[OK]
 function declareVariable(){
 	var declares = [
 		"let",
@@ -128,84 +106,116 @@ function declareVariable(){
 	];
 	
 	var variableName = rand_array(variableNames);
-	while(variablesStack[stackIndex].includes(variableName)){ //Prevents duplicate variables
+	while(getCurrentVariablesList()[variableName]){ //Prevents duplicate variables
 		variableName = rand_array(variableNames);
 	}
 
-	variablesStack[stackIndex].push(variableName);
-
-	return identTabs(stackIndex) + rand_array(declares) + " " + variableName + " = " + generateLiteral();
-}
-
-
-function generateLiteral(){
-	
 	var types = [
-		() => Math.random() * 10,
-		() => Math.floor(Math.random() * 100),
-		() => '"' + randomWords({ min: 1, max: 5, join: ' ' }) + '"',
-		() => "[]",
-		() => "true",
-		() => "false"
+		"number",
+		"string",
+		"array",
+		"boolean"
 	]
-	
-	return rand_array(types)();
+
+	var type = rand_array(types);
+
+	var newlyCreatedVariable = {
+		name: variableName,
+		type: type
+	};
+
+	variablesStack[stackIndex][variableName] = newlyCreatedVariable;
+
+	var output = rand_array(declares) + " " + variableName + " = " + generateLiteral([type]);
+	return output
 }
 
-function generateValue(){
-	var declaredVariables = getCurrentVariablesList();
+//[OK]
+function generateLiteral(types){
 
-	if(declaredVariables.length > 0){
-		if(Math.random() < 0.5) return generateLiteral();
-		else {
-			var v =  getRandomVariable();
-			if(Math.random() < 0.5) v += "[" + generateValue() + "]";
-			return v;
+	var typeMethods = {
+		number: [
+			() => Math.random() * 10,
+			() => Math.floor(Math.random() * 100)
+		],
+		string: [() => '"' + randomWords({ min: 1, max: 5, join: ' ' }) + '"'],
+		array: [() => "[]"],
+		boolean: [
+			() => "true",
+			() => "false",
+		]
+	}
+
+	var mts = [];
+
+	if(!types){
+		mts = mts.concat(typeMethods.number);
+		mts = mts.concat(typeMethods.string);
+		mts = mts.concat(typeMethods.array);
+		mts = mts.concat(typeMethods.boolean);
+	}
+	else{
+		for(var i = 0; i < types.length; i ++){
+			mts = mts.concat(typeMethods[types[i]]);
 		}
 	}
-	else return generateLiteral();
+	
+	return rand_array(mts)();
 }
 
+//[OK]
+function generateValue(types){
+	var declaredVariables = objectEntries(getCurrentVariablesList(types));
+
+	if(declaredVariables.length > 0){
+		if(Math.random() < 0.5) return generateLiteral(types);
+		else {
+			return rand_array(declaredVariables);
+		}
+	}
+	else return generateLiteral(types);
+}
+
+//[OK]
 function openIf(){
-	return openIfFromElse(stackIndex);
-}
-
-function openIfFromElse(idt){
 	stackIndex ++;
-	stackType[stackIndex] = "if";
-	variablesStack[stackIndex] = [];
-	return identTabs(idt) + "if(" + generateBooleanExpression()+ "){";
+	variablesStack[stackIndex] = {};
+	return "if(" + generateBooleanExpression()+ "){";
 }
 
+//[OK]
 function openElseIf(){
 	var openif = openIfFromElse(0);
-	stackType[stackIndex] = "else if";
-	return identTabs(stackIndex-1) + "else " + openif;
+	return "else " + openif;
 }
 
+//[OK]
 function openElse(){
 	stackIndex ++;
-	stackType[stackIndex] = "else";
 	variablesStack[stackIndex] = [];
-	return identTabs(stackIndex-1) + "else {"
+	return "else {"
 }
 
+//[OK]
 function closeStack(){
 	variablesStack.splice(stackIndex, 1);
-	stackType.splice(stackIndex, 1);
 	stackIndex --;
-	return identTabs(stackIndex) + "}";
+	return "}";
 }
 
+//[OK]
 function openWhile(){
 	stackIndex ++;
-	stackType[stackIndex] = "while";
 	variablesStack[stackIndex] = [];
-	return identTabs(stackIndex-1) + "while(" + generateBooleanExpression()+ "){";
+	return "while(" + generateBooleanExpression()+ "){";
 }
 
+//[OK]
 function openFor(){
 	var forvariable = rand_array(variableNames);
+	while(objectEntries(getCurrentVariablesList()).includes(forvariable)){
+		forvariable = rand_array(variableNames);
+	}
 
 	var comparators = [
 		">",
@@ -216,52 +226,145 @@ function openFor(){
 
 	var fr = "for (var " + 
 		forvariable + " = " + Math.floor(Math.random() * 100) + "; " + 
-		forvariable + " " + rand_array(comparators) + " " + generateValue() + "; " + 
-		forvariable + " " + rand_array(["++", "--", "+= " + generateValue(), "-= " + generateValue()]) + "){";
+		forvariable + " " + rand_array(comparators) + " " + generateValue(["number"]) + "; " + 
+		forvariable + " " + rand_array(["++", "--", "+= " + generateValue(["number"]), "-= " + generateValue(["number"])]) + "){";
 
 	stackIndex ++;
-	stackType[stackIndex] = "while";
 	variablesStack[stackIndex] = [];
-	return identTabs(stackIndex-1) + fr;
+	return fr;
 }
 
+//[OK]
 function attribute(){
-	return identTabs(stackIndex) + getRandomVariable() + " = " + generateArithmeticExpression();
+
+	var vars = objectEntries(getCurrentVariablesList());
+	if(vars.length == 0) return false;
+
+	var v = rand_array(vars);
+	var type = getCurrentVariablesList()[v].type;
+
+	var attr = generateValue([type]);
+	while(attr == v) attr = generateValue([type]);
+	if(type == "number" && Math.random() > 0.7) attr = generateArithmeticExpression();
+	if(type == "boolean" && Math.random() > 0.7) attr = generateBooleanExpression();
+
+	return getRandomVariable([type]) + " = " + attr;
 }
 
+//[OK]
 function pushToArray(){
-	return identTabs(stackIndex) + getRandomVariable() + ".push(" + generateValue() + ")";
+	var v = getRandomVariable(["array"]);
+	if(!v) return false;
+
+	return v + ".push(" + generateValue() + ")";
 }
 
+//[OK]
 function attributeToRandomArray(){
-	return identTabs(stackIndex) + getRandomVariable() + "[" + generateValue() + "] = " + generateArithmeticExpression();
+	var v = getRandomVariable(["array"]);
+	if(!v) return false;
+
+	return v + "[" + generateValue(["number"]) + "] = " + generateValue();
 }
 
-function getRandomVariable(){
-	return rand_array(getCurrentVariablesList());
+//[OK]
+function getRandomVariable(types){
+	return rand_array(objectEntries(getCurrentVariablesList(types)));
 }
 
-function getCurrentVariablesList(){
-	var declaredVariables = [];
-	for(var i = 0; i <= stackIndex; i++){
-		declaredVariables = declaredVariables.concat(variablesStack[i]);
+//[OK]
+function getCurrentVariablesList(types){
+	
+	if(!types){
+		types = ["number", "string", "array", "boolean"]
 	}
+
+	var declaredVariables = {};
+	for(var i = 0; i <= stackIndex; i++){
+
+		for(var [k, v] of Object.entries(variablesStack[i])){
+			if(types.includes(v.type)){
+				declaredVariables[v.name] = v;
+			}
+		}
+	}
+
 	return declaredVariables;
 }
 
+//[OK]
 function generateBooleanExpression(){
-	var comparators = [
-		"==",
-		"===",
-		">",
-		"<",
-		">=",
-		"<=",
-		"!="
-	]
-	return generateValue() + " " + rand_array(comparators) + " " + generateValue();
+
+	//As vezes nao tem variavel do tipo q precisa
+	
+	var comps = [
+		(c) => { //Opera 2 valores do mesmo tipo
+			var types = ["number", "string", "boolean"];
+			var type = rand_array(types);
+			
+			var v1 = getRandomVariable([type]);
+			if(objectEntries(getCurrentVariablesList([type])).length == 0){ //Se não tem nenhuma variavel do q eu preciso, usa literal mesmo
+				v1 = generateValue([type]);
+			}
+
+			var v2 = generateValue([type]);
+			while(v1 == v2) v2 = generateValue([type]);
+			
+
+			return v1+ " " + c + " " + v2;
+		},
+		(c) => { //Compara 2 valores numericos
+			var v1 = getRandomVariable(["number"]);
+			if(objectEntries(getCurrentVariablesList(["number"])).length == 0){ //Se não tem nenhuma variavel do q eu preciso, usa literal mesmo
+				v1 = generateValue(["number"]);
+			}
+
+			var v2 = generateValue(["number"]);
+			while(v1 == v2) v2 = generateValue(["number"]);
+
+			return v1 + " " + c + " " + v2; 
+		},
+		(c) => { //Compara 2 boolean
+			var v1 = getRandomVariable(["boolean"]);
+			if(objectEntries(getCurrentVariablesList(["boolean"])).length == 0){ //Se não tem nenhuma variavel do q eu preciso, usa literal mesmo
+				v1 = generateValue(["boolean"]);
+			}
+
+			var v2 = generateValue(["boolean"]);
+			while(v1 == v2) v2 = generateValue(["boolean"]);
+
+			return v1 + " " + c + " " + v2;  
+		},
+		(c) => { //nega uma boolean
+			var v1 = getRandomVariable(["boolean"]);
+			if(objectEntries(getCurrentVariablesList(["boolean"])).length == 0){ //Se não tem nenhuma variavel do q eu preciso, usa literal mesmo
+				v1 = generateValue(["boolean"]);
+			}
+
+			return "!" + v1;
+		}
+	];
+
+	var comparators = {
+		"==": comps[0],
+		"===": comps[0],
+		"!=": comps[0],
+		">": comps[1],
+		"<": comps[1],
+		">=": comps[1],
+		"<=": comps[1],
+		"&&": comps[2],
+		"||": comps[2],
+		"!": comps[3],
+		"": (c) => generateValue(["boolean"]),
+		".": (c) => "!(" + generateBooleanExpression() + ")"
+	}
+	
+	var op = rand_array(objectEntries(comparators));
+	return comparators[op](op);
 }
 
+//[OK]
 function generateArithmeticExpression(){
 
 	var operators = [
@@ -272,26 +375,25 @@ function generateArithmeticExpression(){
 		"%"
 	]
 
-	var exp = generateValue();
-	var cps = Math.floor(Math.random() * 4) + 1;
-	for( var i = 0; i < cps; i ++){
-		exp += " " + rand_array(operators) + " " + generateValue();
-	}
-	return exp;
+	var vals = [
+		() => generateValue(["number"]),
+		() => generateValue(["number"]),
+		() => "(" + generateArithmeticExpression() + ")"
+	]
+
+	return rand_array(vals)() + " " + rand_array(operators) + " " + rand_array(vals)();
 }
 
+//[OK]
 function logValue(){
-	return identTabs(stackIndex) + "console.log(" + generateValue() + ")";
-}
 
-function logExpression(){
-	return identTabs(stackIndex) + "console.log(" + generateArithmeticExpression() + ")";
-}
+	var possibles = [
+		() => generateValue(),
+		() => generateArithmeticExpression(),
+		() => generateBooleanExpression()
+	]
 
-function identTabs(amount){
-	var idt = "";
-	for(var i = 0; i < amount; i ++) idt += "  ";
-	return idt;
+	return "console.log(" + rand_array(possibles)() + ")";
 }
 
 function rand_array(arr){
@@ -361,6 +463,10 @@ function sendToPage(code){
 	);
 	
 	form.pipe(req);
+}
+
+function objectEntries(obj){
+	return Object.entries(obj).map((o) => o[0]);
 }
 
 var token = process.env["CODEBOT_ACCESS_TOKEN"];
