@@ -439,7 +439,8 @@ function generateImage(code, callback){
 	nodeHtmlToImage({
 		output: './output.png',
 		html: htmlBase,
-		selector: "div#content"
+		selector: "div#content",
+		puppeteerArgs: ['--no-sandbox', '--disable-setuid-sandbox']
 	  })
 		.then(() => {
 			console.log("Image generated");
