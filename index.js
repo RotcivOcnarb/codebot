@@ -440,7 +440,7 @@ function generateImage(code, callback){
 		output: './output.png',
 		html: htmlBase,
 		selector: "div#content",
-		puppeteerArgs: ['--no-sandbox', '--disable-setuid-sandbox']
+		puppeteerArgs: {args: ['--no-sandbox', '--disable-setuid-sandbox']}
 	  })
 		.then(() => {
 			console.log("Image generated");
