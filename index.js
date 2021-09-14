@@ -55,6 +55,7 @@ var variablesStack = [];
 
 function generateCode(){
 	variablesStack = [{}];
+	stackIndex = 0;
 	return baseCode();
 }
 
@@ -545,6 +546,8 @@ generateImage(code, () =>{
 
 setInterval(() => {
 	var code = generateCode();
-	generateImage(code);
-	sendToPage(code);
+	generateImage(code, () => {
+		sendToPage(code);
+	});
+	
 }, 1000 * 60 * 60);
